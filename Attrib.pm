@@ -15,11 +15,11 @@ Class::Attrib - Abstract translucent attribute management.
 
 =over
 
-=item * Defines a simple way to specify attribute default values per class.
-
-=item * Provides an inherited view of class attribute definitions.
+=item * Provides an inherited view of attributes.
 
 =item * AUTOLOAD's accessor methods for visible attributes only.
+
+=item * Supplies a simple way to specify attributes and default values.
 
 =back
 
@@ -29,12 +29,12 @@ use strict;
 use warnings;
 
 use Storable qw( &dclone );
-use Class::Multi qw( &walk );
+use Class::Multi qw( &walk &other &otherpkg );
 use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.00";
+$VERSION = "1.01";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
@@ -60,8 +60,7 @@ $VERSION = "1.00";
 =head2 Explanation:
 
 Attribute definitions are kept in hashes named 'Attrib' in the derived
-classes.  The details of the attribute definitions determine the behavior
-of the accessor methods.
+class package.
 
 ClassAttrib (a class attribute) only has useful meaning during instantiation
 of an object, therefore instance data is ignored entirely during accessor calls.
@@ -70,9 +69,9 @@ translucent_attrib is an instance attribute. Instances inherit their
 value from their (possibly itself inherited) class default, unless an
 overriding value has been stored on the object itself.
 
-mandatory_attrib (an object attribute) has an undefined default, therefore
-warnings will be issued when the program tries to access the attribute before
-the object sets a value.
+mandatory_attrib has an undefined default, therefore warnings will be issued
+if the program tries to access the attribute before it sets a value on the
+object.
 
 =head1 CLASS ATTRIBUTE ACCESSOR METHOD
 
@@ -102,18 +101,18 @@ Returns the newly assigned value, for convenience.
 sub Attrib($;$;$) {
 	my $this = shift;
 	my $class = ref( $this ) || $this;
-	my ( $name, $value ) = @_;
 
 	unless ( @_ ) {
 		my %attribs = ();
 		my ( $Attr, $attr );
 
 		walk {
+			my $pkg = shift;
 
 			{ # scope no strict 'refs'
 				no strict 'refs';
-				$Attr = \%{$_.'::Attrib'};
-			} # end scope no strict 'refs'
+				$Attr = \%{$pkg.'::Attrib'};
+			} # end scope
 
 			foreach $attr ( keys %$Attr ) {
 				$attribs{$attr} = $Attr->{$attr}
@@ -126,15 +125,18 @@ sub Attrib($;$;$) {
 		return \%attribs;
 	}
 
+	my ( $name, $value ) = @_;
+
 	my $ClassAttrib = walk {	
 			my $pkg = shift;
 			my $ClassAttrib;
+
 			{ # scope no strict 'refs'
 				no strict 'refs';
-				$ClassAttrib = \%{"$pkg\::Attrib"};
+				$ClassAttrib = \%{$pkg.'::Attrib'};
 			} # end scope
 
-			return exists $ClassAttrib->{$name}
+			exists $ClassAttrib->{$name}
 				? $ClassAttrib : undef
 		} $class;
 
@@ -170,7 +172,6 @@ is 'undef', removes any previously stored instance-specific value.
 
 sub attrib($;$;$) {
 	my $self = shift;
-	my ( $key, $value ) = @_;
 
 	# class reference, might want to test or change a default
 	return $self->Attrib( @_ ) unless ref $self;
@@ -178,9 +179,11 @@ sub attrib($;$;$) {
 	# never return a reference to the real data ;)
 	return dclone( $self->{__PACKAGE__} ) unless @_;
 
+	my ( $key, $value ) = @_;
+
 	if ( @_ > 1 ) {
 		if ( defined $value ) {
-			$self->{__PACKAGE__}->{$key} = $value
+			$self->{__PACKAGE__}->{$key} = $value;
 		} else {
 			delete $self->{__PACKAGE__}->{$key};
 		}
@@ -198,11 +201,15 @@ Each attribute has a corresponding accessor method with the same name.
 
 =head2 $this->foo();
 
-Equivalent to C<< $this->attrib( 'foo' ); >>.
+Equivalent to C<< $this->attrib( 'foo' ); >>
 
 =head2 $this->foo( value );
 
-Equivalent to C<< $this->attrib( 'foo', $value ); >>.
+Equivalent to C<< $this->attrib( 'foo', $value ); >>
+
+=head2 $this->Bar();
+
+Equivalent to C<< $this->Attrib( 'Bar' ); >>
 
 =cut
 
@@ -215,38 +222,37 @@ sub AUTOLOAD {
 	$name =~ s/.*://;
 
 	# check to see if the requested attribute exists
-	my $pkg = walk {	
+	my $class = walk {	
 			my $pkg = shift;
 			my $ClassAttrib;
 			{ # scope no strict 'refs'
 				no strict 'refs';
-				$ClassAttrib = \%{"$pkg\::Attrib"};
+				$ClassAttrib = \%{$pkg.'::Attrib'};
 			} # end scope
 
-			return exists $ClassAttrib->{$name}
+			exists $ClassAttrib->{$name}
 				? $pkg : undef
 		} ref( $this ) || $this;
 
 	# redispatch; the calling program might not be thinking about us at all
-	unless ( defined $pkg ) {
-		$pkg = otherpkg( $this, 'AUTOLOAD' );
+	unless ( defined $class ) {
 
-		unless ( defined $pkg ) {
+		unless ( $class = otherpkg( $this, 'AUTOLOAD' ) ) {
 			confess( __PACKAGE__ . "->AUTOLOAD: ",
 				"No attribute '$name' found via '$AUTOLOAD'." )
 		}
 
 		{ # scope no strict refs
 			no strict 'refs';
-			${"$pkg\::AUTOLOAD"} = $AUTOLOAD;
-			return &{"$pkg\::AUTOLOAD"}( $this, @_ );
+			${$class.'::AUTOLOAD'} = $AUTOLOAD;
+			return &{$class.'::AUTOLOAD'}( $this, @_ );
 		} # end scope
 
 	}
 
 	# Build fully qualified name --WHERE DATA WAS FOUND--
 	# this keeps code memory to a minimum, while preserving inheritance
-	my $sym = $pkg . '::' . $name;
+	my $sym = $class . '::' . $name;
 	my $ref;
 
 	# install symbol table reference
@@ -279,7 +285,7 @@ it cannot be instantiated without some impolite bless hackery.
 
 =over 
 
-=item K Cody <kcody@jilcraft.com>
+=item K Cody <kcody@users.sourceforge.net>
 
 =back
 
