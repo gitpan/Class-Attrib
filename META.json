@@ -1,12 +1,12 @@
 {
-   "abstract" : "unknown",
+   "abstract" : "Abstract translucent attribute management.",
    "author" : [
-      "unknown"
+      "Kevin Cody-Little <kcody@cpan.org>"
    ],
    "dynamic_config" : 1,
    "generated_by" : "ExtUtils::MakeMaker version 6.64, CPAN::Meta::Converter version 2.120921",
    "license" : [
-      "unknown"
+      "lgpl_2_1"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
@@ -31,9 +31,16 @@
          }
       },
       "runtime" : {
-         "requires" : {}
+         "requires" : {
+            "Class::Multi" : "1.01"
+         }
       }
    },
    "release_status" : "stable",
-   "version" : "1.03"
+   "resources" : {
+      "repository" : {
+         "url" : "https://github.com/kcodyjr/class-attrib"
+      }
+   },
+   "version" : "1.04"
 }
