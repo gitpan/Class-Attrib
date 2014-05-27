@@ -32,7 +32,9 @@
       },
       "runtime" : {
          "requires" : {
-            "Class::Multi" : "1.01"
+            "Carp" : "0",
+            "Class::Multi" : "1.02",
+            "Storable" : "0"
          }
       }
    },
@@ -42,5 +44,5 @@
          "url" : "https://github.com/kcodyjr/class-attrib"
       }
    },
-   "version" : "1.04"
+   "version" : "1.05"
 }

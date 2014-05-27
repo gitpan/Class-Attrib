@@ -13,11 +13,13 @@ WriteMakefile(
     VERSION_FROM	=> 'Attrib.pm', # finds $VERSION
     ABSTRACT_FROM	=> 'Attrib.pm',
     PREREQ_PM		=> {
-	'Class::Multi'	=> 1.01,
+	'Carp'		=> 0,
+	'Class::Multi'	=> 1.02,
+	'Storable'	=> 0,
     },
     dist		=> {
         COMPRESS	=> 'gzip',
 	SUFFIX		=> 'gz',
     },
-    AUTHOR		=> 'Kevin Cody-Little <kcody@cpan.org>'
+    AUTHOR		=> 'Kevin Cody-Little <kcody@cpan.org>',
 );
