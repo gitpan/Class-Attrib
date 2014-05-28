@@ -1,26 +1,13 @@
----
-abstract: 'Abstract translucent attribute management.'
-author:
-  - 'Kevin Cody-Little <kcody@cpan.org>'
-build_requires:
-  ExtUtils::MakeMaker: 0
-configure_requires:
-  ExtUtils::MakeMaker: 0
-dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.64, CPAN::Meta::Converter version 2.120921'
-license: lgpl
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
-name: Class-Attrib
-no_index:
-  directory:
-    - t
-    - inc
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Class-Attrib
+version:      1.06
+version_from: Attrib.pm
+installdirs:  site
 requires:
-  Carp: 0
-  Class::Multi: 1.02
-  Storable: 0
-resources:
-  repository: https://github.com/kcodyjr/class-attrib
-version: 1.05
+    Carp:                          0
+    Class::Multi:                  1.02
+    Storable:                      0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.30
